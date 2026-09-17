@@ -33,6 +33,22 @@ public class ChessPosition {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ChessPosition that)) {
+            return false;
+        }
+        return row == that.row && col == that.col;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * row +col;
+    }
+
+    @Override
     public String toString() {
         return String.format("[%d,%d]", row, col);
     }
