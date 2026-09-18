@@ -42,6 +42,13 @@ public class ChessPiece {
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
     };
 
+    private static final int[][] ROOK_DIRECTIONS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+    private static final int[][] BISHOP_DIRECTIONS = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    private static final int[][] QUEEN_DIRECTIONS = {
+            {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+    };
+
     @Override
     public boolean equals(Object obj){
         if (this == obj){
@@ -86,6 +93,9 @@ public class ChessPiece {
         return switch (type){
             case KNIGHT -> steppingMoves(board, myPosition, KNIGHT_OFFSETS);
             case KING -> steppingMoves(board, myPosition, KING_OFFSETS);
+            case ROOK -> slidingMoves(board, myPosition, ROOK_DIRECTIONS);
+            case BISHOP -> slidingMoves(board, myPosition, BISHOP_DIRECTIONS);
+            case QUEEN -> slidingMoves(board, myPosition, QUEEN_DIRECTIONS);
             default -> List.of();
         };
     }
@@ -102,6 +112,33 @@ public class ChessPiece {
             var occupant = board.getPiece(target);
             if (occupant == null || occupant.getTeamColor() != pieceColor){
                 moves.add(new ChessMove(myPosition, target, null));
+            }
+        }
+        return moves;
+    }
+
+    private Collection<ChessMove> slidingMoves(ChessBoard board, ChessPosition myPosition, int[][] directions){
+        var moves = new ArrayList<ChessMove>();
+        for (var direction : directions){
+            int row = myPosition.getRow();
+            int col = myPosition.getColumn();
+            while (true){
+                row += direction[0];
+                col += direction[1];
+                if (!onBoard(row, col)){
+                    break;
+                }
+                var target = new ChessPosition(row, col);
+                var occupant = board.getPiece(target);
+                if (occupant == null){
+                    moves.add(new ChessMove(myPosition, target, null));
+                }
+                else{
+                    if (occupant.getTeamColor() != pieceColor){
+                        moves.add(new ChessMove(myPosition, target, null));
+                    }
+                    break;
+                }
             }
         }
         return moves;
