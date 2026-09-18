@@ -2,6 +2,7 @@ package chess;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Represents a single chess piece
@@ -30,6 +31,16 @@ public class ChessPiece {
         ROOK,
         PAWN
     }
+
+    private static final int[][] KNIGHT_OFFSETS = {
+            {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
+            {1, 2}, {1, -2}, {-1, 2}, {-1, -2},
+    };
+
+    private static final int[][] KING_OFFSETS = {
+            {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1},
+    };
 
     @Override
     public boolean equals(Object obj){
@@ -72,10 +83,31 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        ChessPiece piece = board.getPiece(myPosition);
-        if (piece.getPieceType() == PieceType.BISHOP){
-            return List.of(new ChessMove(new ChessPosition(5,4), new ChessPosition(1,8), null));
+        return switch (type){
+            case KNIGHT -> steppingMoves(board, myPosition, KNIGHT_OFFSETS);
+            case KING -> steppingMoves(board, myPosition, KING_OFFSETS);
+            default -> List.of();
+        };
+    }
+
+    private Collection<ChessMove> steppingMoves(ChessBoard board, ChessPosition myPosition, int[][] offsets){
+        var moves = new ArrayList<ChessMove>();
+        for (var offset : offsets){
+            int row = myPosition.getRow() + offset[0];
+            int col = myPosition.getColumn() + offset[1];
+            if (!onBoard(row, col)){
+                continue;
+            }
+            var target = new ChessPosition(row, col);
+            var occupant = board.getPiece(target);
+            if (occupant == null || occupant.getTeamColor() != pieceColor){
+                moves.add(new ChessMove(myPosition, target, null));
+            }
         }
-        return List.of();
+        return moves;
+    }
+
+    private static boolean onBoard(int row, int col){
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
     }
 }
