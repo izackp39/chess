@@ -42,8 +42,14 @@ public class ChessPiece {
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
     };
 
-    private static final int[][] ROOK_DIRECTIONS = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    private static final int[][] BISHOP_DIRECTIONS = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+    private static final int[][] ROOK_DIRECTIONS = {
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
+
+    private static final int[][] BISHOP_DIRECTIONS = {
+            {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
+
     private static final int[][] QUEEN_DIRECTIONS = {
             {1, 1}, {1, -1}, {-1, 1}, {-1, -1},
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
@@ -80,7 +86,9 @@ public class ChessPiece {
     /**
      * @return which type of chess piece this piece is
      */
-    public PieceType getPieceType() {return type; }
+    public PieceType getPieceType() {
+        return type;
+    }
 
     /**
      * Calculates all the positions a chess piece can move to
