@@ -1,6 +1,8 @@
 package chess;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * A class that can manage a chess game, making moves on a board
@@ -10,15 +12,54 @@ import java.util.Collection;
  */
 public class ChessGame {
 
-    public ChessGame() {
+    private ChessBoard board;
+    private TeamColor teamTurn;
 
+    private boolean whiteKingMoved;
+    private boolean whiteRookAMoved;
+    private boolean whiteRookHMoved;
+    private boolean blackKingMoved;
+    private boolean blackRookAMoved;
+    private boolean blackRookHMoved;
+
+    private ChessPosition enPassantTarget;
+
+    public ChessGame() {
+        board = new ChessBoard();
+        board.resetBoard();
+        teamTurn = TeamColor.WHITE;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ChessGame that)) {
+            return false;
+        }
+        return teamTurn == that.teamTurn
+                && board.equals(that.board)
+                && whiteKingMoved == that.whiteKingMoved
+                && whiteRookAMoved == that.whiteRookAMoved
+                && whiteRookHMoved == that.whiteRookHMoved
+                && blackKingMoved == that.blackKingMoved
+                && blackRookAMoved == that.blackRookAMoved
+                && blackRookHMoved == that.blackRookHMoved
+                && Objects.equals(enPassantTarget, that.enPassantTarget);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(board, teamTurn, whiteKingMoved, whiteRookAMoved, whiteRookHMoved,
+                blackKingMoved, blackRookAMoved, blackRookHMoved, enPassantTarget);
     }
 
     /**
      * @return Which team's turn it is
      */
     public TeamColor getTeamTurn() {
-        throw new RuntimeException("Not implemented");
+        return teamTurn;
     }
 
     /**
@@ -27,7 +68,7 @@ public class ChessGame {
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
-        throw new RuntimeException("Not implemented");
+        teamTurn = team;
     }
 
     /**
@@ -96,7 +137,14 @@ public class ChessGame {
      * @param board the new board to use
      */
     public void setBoard(ChessBoard board) {
-        throw new RuntimeException("Not implemented");
+        this.board = board;
+        enPassantTarget = null;
+        whiteKingMoved = false;
+        whiteRookAMoved = false;
+        whiteRookHMoved = false;
+        blackKingMoved = false;
+        blackRookAMoved = false;
+        blackRookHMoved = false;
     }
 
     /**
@@ -105,6 +153,6 @@ public class ChessGame {
      * @return the chessboard
      */
     public ChessBoard getBoard() {
-        throw new RuntimeException("Not implemented");
+        return board;
     }
 }
