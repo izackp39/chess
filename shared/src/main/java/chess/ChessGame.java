@@ -87,7 +87,14 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        throw new RuntimeException("Not implemented");
+        var piece = board.getPiece(startPosition);
+        if (piece == null) {
+            return null;
+        }
+
+        var legalMoves = new ArrayList<ChessMove>();
+
+        return legalMoves;
     }
 
     /**
@@ -107,7 +114,48 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        return isInCheck(teamColor, board);
+    }
+
+    private boolean isInCheck(TeamColor teamColor, ChessBoard b) {
+        var kingPosition = findKing(b, teamColor);
+        return kingPosition != null && isSquareAttacked(b, kingPosition, opponent(teamColor));
+    }
+
+    private ChessPosition findKing(ChessBoard b, TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                var position = new ChessPosition(row, col);
+                var piece = b.getPiece(position);
+                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING
+                        && piece.getTeamColor() == teamColor) {
+                    return position;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isSquareAttacked(ChessBoard b, ChessPosition target, TeamColor byTeam) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                var position = new ChessPosition(row, col);
+                var piece = b.getPiece(position);
+                if (piece == null || piece.getTeamColor() != byTeam) {
+                    continue;
+                }
+                for (var move : piece.pieceMoves(b, position)) {
+                    if (move.getEndPosition().equals(target)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private static TeamColor opponent(TeamColor color) {
+        return color == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
     /**
