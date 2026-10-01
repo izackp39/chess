@@ -64,6 +64,14 @@ public class ChessBoard {
         }
     }
 
+    public ChessBoard copy() {
+        var copy = new ChessBoard();
+        for (int row = 0; row < 8; row++) {
+            copy.squares[row] = squares[row].clone();
+        }
+        return copy;
+    }
+
     @Override
     public boolean equals(Object obj){
         if (this == obj){
