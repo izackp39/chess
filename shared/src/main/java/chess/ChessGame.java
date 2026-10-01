@@ -93,8 +93,23 @@ public class ChessGame {
         }
 
         var legalMoves = new ArrayList<ChessMove>();
-
+        for (var move : piece.pieceMoves(board, startPosition)) {
+            var simulatedBoard = board.copy();
+            executeMove(simulatedBoard, move);
+            if (!isInCheck(piece.getTeamColor(), simulatedBoard)) {
+                legalMoves.add(move);
+            }
+        }
         return legalMoves;
+    }
+
+    private void executeMove(ChessBoard b, ChessMove move) {
+        var piece = b.getPiece(move.getStartPosition());
+        var placedPiece = move.getPromotionPiece() != null
+                ? new ChessPiece(piece.getTeamColor(), move.getPromotionPiece())
+                : piece;
+        b.addPiece(move.getStartPosition(), null);
+        b.addPiece(move.getEndPosition(), placedPiece);
     }
 
     /**
@@ -104,7 +119,18 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-        throw new RuntimeException("Not implemented");
+        var piece = board.getPiece(move.getStartPosition());
+        if (piece == null || piece.getTeamColor() != teamTurn) {
+            throw new InvalidMoveException("No piece belonging to the current team at " + move.getStartPosition());
+        }
+
+        var legalMoves = validMoves(move.getStartPosition());
+        if (legalMoves == null || !legalMoves.contains(move)) {
+            throw new InvalidMoveException("Invalid move: " + move);
+        }
+
+        executeMove(board, move);
+        teamTurn = opponent(teamTurn);
     }
 
     /**
