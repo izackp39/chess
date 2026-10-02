@@ -23,12 +23,18 @@ public class ChessGame {
     private boolean blackRookAMoved;
     private boolean blackRookHMoved;
 
+    /**
+     * Creates a new game with a standard starting board and white to move
+     */
     public ChessGame() {
         board = new ChessBoard();
         board.resetBoard();
         teamTurn = TeamColor.WHITE;
     }
 
+    /**
+     * Two games are equal if their boards, turn, and castling flags all match
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -47,6 +53,9 @@ public class ChessGame {
                 && blackRookHMoved == that.blackRookHMoved;
     }
 
+    /**
+     * Hashes the same fields used in equals
+     */
     @Override
     public int hashCode() {
         return Objects.hash(board, teamTurn, whiteKingMoved, whiteRookAMoved, whiteRookHMoved,
@@ -101,6 +110,10 @@ public class ChessGame {
         return legalMoves;
     }
 
+    /**
+     * Applies a move to the given board without any legality checks,
+     * swapping in the promotion piece if the move has one
+     */
     private void executeMove(ChessBoard b, ChessMove move) {
         var piece = b.getPiece(move.getStartPosition());
         var placedPiece = move.getPromotionPiece() != null
@@ -141,11 +154,18 @@ public class ChessGame {
         return isInCheck(teamColor, board);
     }
 
+    /**
+     * Determines if the given team's king is under attack on the given board
+     * (used to test hypothetical boards in validMoves)
+     */
     private boolean isInCheck(TeamColor teamColor, ChessBoard b) {
         var kingPosition = findKing(b, teamColor);
         return kingPosition != null && isSquareAttacked(b, kingPosition, opponent(teamColor));
     }
 
+    /**
+     * Returns the positions of every piece belonging to the given team
+     */
     private static List<ChessPosition> positionsOf(ChessBoard b, TeamColor team) {
         var positions = new ArrayList<ChessPosition>();
         for (int row = 1; row <= 8; row++) {
@@ -160,6 +180,9 @@ public class ChessGame {
         return positions;
     }
 
+    /**
+     * Finds the given team's king, or null if it isn't on the board
+     */
     private ChessPosition findKing(ChessBoard b, TeamColor teamColor) {
         for (var pos : positionsOf(b, teamColor)) {
             if (b.getPiece(pos).getPieceType() == ChessPiece.PieceType.KING) {
@@ -169,6 +192,9 @@ public class ChessGame {
         return null;
     }
 
+    /**
+     * Determines if any piece of the given team can move onto the target square
+     */
     private boolean isSquareAttacked(ChessBoard b, ChessPosition target, TeamColor byTeam) {
         for (var pos : positionsOf(b, byTeam)) {
             for (var move : b.getPiece(pos).pieceMoves(b, pos)) {
@@ -180,6 +206,9 @@ public class ChessGame {
         return false;
     }
 
+    /**
+     * Returns the other team's color
+     */
     private static TeamColor opponent(TeamColor color) {
         return color == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
     }
@@ -205,6 +234,9 @@ public class ChessGame {
         return !isInCheck(teamColor) && hasNoValidMoves(teamColor);
     }
 
+    /**
+     * Determines if none of the given team's pieces have a legal move
+     */
     private boolean hasNoValidMoves(TeamColor teamColor) {
         for (var pos : positionsOf(board, teamColor)) {
             if (!validMoves(pos).isEmpty()) {
