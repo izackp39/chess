@@ -3,6 +3,7 @@ package chess;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.List;
 
 /**
  * A class that can manage a chess game, making moves on a board
@@ -145,32 +146,34 @@ public class ChessGame {
         return kingPosition != null && isSquareAttacked(b, kingPosition, opponent(teamColor));
     }
 
-    private ChessPosition findKing(ChessBoard b, TeamColor teamColor) {
+    private static List<ChessPosition> positionsOf(ChessBoard b, TeamColor team) {
+        var positions = new ArrayList<ChessPosition>();
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
-                var position = new ChessPosition(row, col);
-                var piece = b.getPiece(position);
-                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING
-                        && piece.getTeamColor() == teamColor) {
-                    return position;
+                var pos = new ChessPosition(row, col);
+                var piece = b.getPiece(pos);
+                if (piece != null && piece.getTeamColor() == team) {
+                    positions.add(pos);
                 }
+            }
+        }
+        return positions;
+    }
+
+    private ChessPosition findKing(ChessBoard b, TeamColor teamColor) {
+        for (var pos : positionsOf(b, teamColor)) {
+            if (b.getPiece(pos).getPieceType() == ChessPiece.PieceType.KING) {
+                return pos;
             }
         }
         return null;
     }
 
     private boolean isSquareAttacked(ChessBoard b, ChessPosition target, TeamColor byTeam) {
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                var position = new ChessPosition(row, col);
-                var piece = b.getPiece(position);
-                if (piece == null || piece.getTeamColor() != byTeam) {
-                    continue;
-                }
-                for (var move : piece.pieceMoves(b, position)) {
-                    if (move.getEndPosition().equals(target)) {
-                        return true;
-                    }
+        for (var pos : positionsOf(b, byTeam)) {
+            for (var move : b.getPiece(pos).pieceMoves(b, pos)) {
+                if (move.getEndPosition().equals(target)) {
+                    return true;
                 }
             }
         }
@@ -203,16 +206,9 @@ public class ChessGame {
     }
 
     private boolean hasNoValidMoves(TeamColor teamColor) {
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                var position = new ChessPosition(row, col);
-                var piece = board.getPiece(position);
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    var moves = validMoves(position);
-                    if (moves != null && !moves.isEmpty()) {
-                        return false;
-                    }
-                }
+        for (var pos : positionsOf(board, teamColor)) {
+            if (!validMoves(pos).isEmpty()) {
+                return false;
             }
         }
         return true;
