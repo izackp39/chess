@@ -6,6 +6,7 @@ import service.AlreadyTakenException;
 import service.BadRequestException;
 import service.ClearService;
 import service.UnauthorizedException;
+import service.UserService;
 
 import com.google.gson.Gson;
 import dataaccess.AuthDAO;
@@ -30,13 +31,15 @@ public class Server {
 
         // Register your endpoints and exception handlers here.
         ClearService clearService = new ClearService(userDAO, authDAO, gameDAO);
+        UserService userService = new UserService(userDAO, authDAO);
+
         javalin.delete("/db", new ClearHandler(clearService));
+        javalin.post("/user", new RegisterHandler(userService));
 
         javalin.exception(BadRequestException.class, (e, ctx) -> sendError(ctx, 400, "bad request"));
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));
         javalin.exception(AlreadyTakenException.class, (e, ctx) -> sendError(ctx, 403, "already taken"));
         javalin.exception(Exception.class, (e, ctx) -> sendError(ctx, 500, e.getMessage()));
-
     }
 
     public int run(int desiredPort) {
