@@ -44,4 +44,34 @@ public class UserServiceTest {
         Assertions.assertThrows(BadRequestException.class, () ->
                 userService.register(new RegisterRequest("isaac", null, "isaac@byu.edu")));
     }
+
+    @Test
+    public void loginSuccess() throws Exception {
+        userService.register(new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        LoginResult result = userService.login(new LoginRequest("isaac", "password"));
+
+        Assertions.assertEquals("isaac", result.username());
+        Assertions.assertEquals("isaac", authDAO.getAuth(result.authToken()).username());
+    }
+
+    @Test
+    public void loginWrongPassword() throws Exception {
+        userService.register(new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                userService.login(new LoginRequest("isaac", "wrongPassword")));
+    }
+
+    @Test
+    public void loginUnknownUser() {
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                userService.login(new LoginRequest("nobody", "password")));
+    }
+
+    @Test
+    public void loginMissingField() {
+        Assertions.assertThrows(BadRequestException.class, () ->
+                userService.login(new LoginRequest("isaac", null)));
+    }
 }
