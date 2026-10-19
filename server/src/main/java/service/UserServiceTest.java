@@ -1,0 +1,48 @@
+package service;
+
+import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
+import dataaccess.MemoryAuthDAO;
+import dataaccess.MemoryUserDAO;
+import dataaccess.UserDAO;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+public class UserServiceTest {
+    private UserDAO userDAO;
+    private AuthDAO authDAO;
+    private UserService userService;
+
+    @BeforeEach
+    public void setUp() {
+        userDAO = new MemoryUserDAO();
+        authDAO = new MemoryAuthDAO();
+        userService = new UserService(userDAO, authDAO);
+    }
+
+    @Test
+    public void registerSuccess() throws Exception {
+        RegisterResult result = userService.register(
+                new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        Assertions.assertEquals("isaac", result.username());
+        Assertions.assertNotNull(result.authToken());
+        Assertions.assertNotNull(userDAO.getUser("isaac"));
+        Assertions.assertEquals("isaac", authDAO.getAuth(result.authToken()).username());
+    }
+
+    @Test
+    public void registerUsernameTaken() throws Exception {
+        userService.register(new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        Assertions.assertThrows(AlreadyTakenException.class, () ->
+                userService.register(new RegisterRequest("isaac", "other", "other@byu.edu")));
+    }
+
+    @Test
+    public void registerMissingField() {
+        Assertions.assertThrows(BadRequestException.class, () ->
+                userService.register(new RegisterRequest("isaac", null, "isaac@byu.edu")));
+    }
+}
