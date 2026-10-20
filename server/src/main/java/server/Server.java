@@ -35,6 +35,7 @@ public class Server {
 
         javalin.delete("/db", new ClearHandler(clearService));
         javalin.post("/user", new RegisterHandler(userService));
+        javalin.post("/session", new LoginHandler(userService));
 
         javalin.exception(BadRequestException.class, (e, ctx) -> sendError(ctx, 400, "bad request"));
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));
