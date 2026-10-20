@@ -74,4 +74,20 @@ public class UserServiceTest {
         Assertions.assertThrows(BadRequestException.class, () ->
                 userService.login(new LoginRequest("isaac", null)));
     }
+
+    @Test
+    public void logoutSuccess() throws Exception {
+        RegisterResult registered = userService.register(
+                new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        userService.logout(registered.authToken());
+
+        Assertions.assertNull(authDAO.getAuth(registered.authToken()));
+    }
+
+    @Test
+    public void logoutInvalidToken() {
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                userService.logout("notARealToken"));
+    }
 }

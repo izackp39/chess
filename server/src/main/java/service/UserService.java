@@ -46,6 +46,13 @@ public class UserService {
         return new LoginResult(request.username(), authToken);
     }
 
+    public void logout(String authToken) throws UnauthorizedException, DataAccessException {
+        if (authToken == null || authDAO.getAuth(authToken) == null) {
+            throw new UnauthorizedException("invalid auth token");
+        }
+        authDAO.deleteAuth(authToken);
+    }
+
     private String createAuth(String username) throws DataAccessException {
         String authToken = UUID.randomUUID().toString();
         authDAO.createAuth(new AuthData(authToken, username));
