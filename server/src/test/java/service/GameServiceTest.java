@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessGame;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
 import dataaccess.MemoryAuthDAO;
@@ -56,5 +57,36 @@ public class GameServiceTest {
     public void listGamesUnauthorized() {
         Assertions.assertThrows(UnauthorizedException.class, () ->
                 gameService.listGames("notARealToken"));
+    }
+
+    @Test
+    public void joinGameSuccess() throws Exception {
+        int gameID = gameService.createGame(VALID_TOKEN, new CreateGameRequest("my game")).gameID();
+
+        gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.WHITE, gameID));
+
+        Assertions.assertEquals("isaac", gameDAO.getGame(gameID).whiteUsername());
+        Assertions.assertNull(gameDAO.getGame(gameID).blackUsername());
+    }
+
+    @Test
+    public void joinGameColorTaken() throws Exception {
+        int gameID = gameService.createGame(VALID_TOKEN, new CreateGameRequest("my game")).gameID();
+        gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.BLACK, gameID));
+
+        Assertions.assertThrows(AlreadyTakenException.class, () ->
+                gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.BLACK, gameID)));
+    }
+
+    @Test
+    public void joinGameBadGameID() {
+        Assertions.assertThrows(BadRequestException.class, () ->
+                gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.WHITE, 999)));
+    }
+
+    @Test
+    public void joinGameUnauthorized() {
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                gameService.joinGame("notARealToken", new JoinGameRequest(ChessGame.TeamColor.WHITE, 1)));
     }
 }
