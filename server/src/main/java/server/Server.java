@@ -5,6 +5,7 @@ import io.javalin.http.Context;
 import service.AlreadyTakenException;
 import service.BadRequestException;
 import service.ClearService;
+import service.GameService;
 import service.UnauthorizedException;
 import service.UserService;
 
@@ -32,11 +33,13 @@ public class Server {
         // Register your endpoints and exception handlers here.
         ClearService clearService = new ClearService(userDAO, authDAO, gameDAO);
         UserService userService = new UserService(userDAO, authDAO);
+        GameService gameService = new GameService(gameDAO, authDAO);
 
         javalin.delete("/db", new ClearHandler(clearService));
         javalin.post("/user", new RegisterHandler(userService));
         javalin.post("/session", new LoginHandler(userService));
         javalin.delete("/session", new LogoutHandler(userService));
+        javalin.post("/game", new CreateGameHandler(gameService));
 
         javalin.exception(BadRequestException.class, (e, ctx) -> sendError(ctx, 400, "bad request"));
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));
