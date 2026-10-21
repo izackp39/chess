@@ -25,6 +25,11 @@ public class GameService {
         return new CreateGameResult(gameID);
     }
 
+    public ListGamesResult listGames(String authToken) throws UnauthorizedException, DataAccessException {
+        authenticate(authToken);
+        return new ListGamesResult(gameDAO.listGames());
+    }
+
     private AuthData authenticate(String authToken) throws UnauthorizedException, DataAccessException {
         AuthData auth = (authToken == null) ? null : authDAO.getAuth(authToken);
         if (auth == null) {

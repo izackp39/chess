@@ -40,6 +40,7 @@ public class Server {
         javalin.post("/session", new LoginHandler(userService));
         javalin.delete("/session", new LogoutHandler(userService));
         javalin.post("/game", new CreateGameHandler(gameService));
+        javalin.get("/game", new ListGamesHandler(gameService));
 
         javalin.exception(BadRequestException.class, (e, ctx) -> sendError(ctx, 400, "bad request"));
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));

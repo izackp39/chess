@@ -41,4 +41,20 @@ public class GameServiceTest {
         Assertions.assertThrows(BadRequestException.class, () ->
                 gameService.createGame(VALID_TOKEN, new CreateGameRequest(null)));
     }
+
+    @Test
+    public void listGamesSuccess() throws Exception {
+        gameService.createGame(VALID_TOKEN, new CreateGameRequest("game one"));
+        gameService.createGame(VALID_TOKEN, new CreateGameRequest("game two"));
+
+        ListGamesResult result = gameService.listGames(VALID_TOKEN);
+
+        Assertions.assertEquals(2, result.games().size());
+    }
+
+    @Test
+    public void listGamesUnauthorized() {
+        Assertions.assertThrows(UnauthorizedException.class, () ->
+                gameService.listGames("notARealToken"));
+    }
 }
