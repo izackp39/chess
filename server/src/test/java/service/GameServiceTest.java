@@ -89,4 +89,19 @@ public class GameServiceTest {
         Assertions.assertThrows(UnauthorizedException.class, () ->
                 gameService.joinGame("notARealToken", new JoinGameRequest(ChessGame.TeamColor.WHITE, 1)));
     }
+
+    @Test
+    public void joinGameMissingColor() {
+        Assertions.assertThrows(BadRequestException.class, () ->
+                gameService.joinGame(VALID_TOKEN, new JoinGameRequest(null, 1)));
+    }
+
+    @Test
+    public void joinGameWhiteTaken() throws Exception {
+        int gameID = gameService.createGame(VALID_TOKEN, new CreateGameRequest("my game")).gameID();
+        gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.WHITE, gameID));
+
+        Assertions.assertThrows(AlreadyTakenException.class, () ->
+                gameService.joinGame(VALID_TOKEN, new JoinGameRequest(ChessGame.TeamColor.WHITE, gameID)));
+    }
 }
