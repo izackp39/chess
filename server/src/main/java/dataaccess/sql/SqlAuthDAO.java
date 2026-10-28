@@ -6,6 +6,16 @@ import model.AuthData;
 
 public class SqlAuthDAO implements AuthDAO {
 
+    public SqlAuthDAO() throws DataAccessException {
+        DatabaseSetup.createTable("""
+            CREATE TABLE IF NOT EXISTS auth (
+              authToken VARCHAR(255) NOT NULL,
+              username VARCHAR(255) NOT NULL,
+              PRIMARY KEY (authToken)
+            )
+            """);
+    }
+
     @Override
     public void clear() throws DataAccessException {
     }

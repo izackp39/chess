@@ -9,6 +9,19 @@ import java.util.Collection;
 
 public class SqlGameDAO implements GameDAO {
 
+    public SqlGameDAO() throws DataAccessException {
+        DatabaseSetup.createTable("""
+            CREATE TABLE IF NOT EXISTS game (
+              gameID INT NOT NULL AUTO_INCREMENT,
+              whiteUsername VARCHAR(255),
+              blackUsername VARCHAR(255),
+              gameName VARCHAR(255) NOT NULL,
+              game TEXT NOT NULL,
+              PRIMARY KEY (gameID)
+            )
+            """);
+    }
+
     @Override
     public void clear() throws DataAccessException {
     }
