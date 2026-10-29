@@ -1,11 +1,16 @@
 package dataaccess;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
+
 import dataaccess.sql.SqlGameDAO;
 import model.GameData;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 
 public class SqlGameDAOTest {
     private SqlGameDAO gameDAO;
@@ -67,5 +72,38 @@ public class SqlGameDAOTest {
 
         Assertions.assertTrue(gameDAO.listGames().isEmpty());
         Assertions.assertEquals(1, gameDAO.createGame("Fresh"));
+    }
+
+    @Test
+    public void updateGameAddsPlayers() throws DataAccessException {
+        int gameID = gameDAO.createGame("My Game");
+        GameData original = gameDAO.getGame(gameID);
+
+        gameDAO.updateGame(new GameData(gameID, "white", "black", original.gameName(), original.game()));
+
+        GameData result = gameDAO.getGame(gameID);
+        Assertions.assertEquals("white", result.whiteUsername());
+        Assertions.assertEquals("black", result.blackUsername());
+    }
+
+    @Test
+    public void updateGameSavesMove() throws Exception {
+        int gameID = gameDAO.createGame("My Game");
+        GameData original = gameDAO.getGame(gameID);
+        ChessGame game = original.game();
+        game.makeMove(new ChessMove(new ChessPosition(2, 5), new ChessPosition(4, 5), null));
+
+        gameDAO.updateGame(new GameData(gameID, null, null, original.gameName(), game));
+
+        GameData result = gameDAO.getGame(gameID);
+        Assertions.assertEquals(game, result.game());
+        Assertions.assertEquals(ChessGame.TeamColor.BLACK, result.game().getTeamTurn());
+    }
+
+    @Test
+    public void updateGameNotFound() {
+        GameData missing = new GameData(9999, null, null, "Ghost", new ChessGame());
+
+        Assertions.assertThrows(DataAccessException.class, () -> gameDAO.updateGame(missing));
     }
 }
