@@ -1,13 +1,22 @@
 package dataaccess.sql;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
+import dataaccess.DatabaseManager;
 import model.GameData;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class SqlGameDAO implements GameDAO {
+
+    private final Gson gson = new Gson();
 
     public SqlGameDAO() throws DataAccessException {
         DatabaseSetup.createTable("""
@@ -24,24 +33,71 @@ public class SqlGameDAO implements GameDAO {
 
     @Override
     public void clear() throws DataAccessException {
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement("TRUNCATE game")) {
+            preparedStatement.executeUpdate();
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error: unable to clear games", ex);
+        }
     }
 
     @Override
     public int createGame(String gameName) throws DataAccessException {
-        return 0;
+        var statement = "INSERT INTO game (gameName, game) VALUES (?, ?)";
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
+            preparedStatement.setString(1, gameName);
+            preparedStatement.setString(2, gson.toJson(new ChessGame()));
+            preparedStatement.executeUpdate();
+            try (var keys = preparedStatement.getGeneratedKeys()) {
+                keys.next();
+                return keys.getInt(1);
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error: unable to create game", ex);
+        }
     }
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
-        return null;
+        var statement = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM game WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+            preparedStatement.setInt(1, gameID);
+            try (var rs = preparedStatement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return readGame(rs);
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error: unable to read game", ex);
+        }
     }
 
     @Override
     public Collection<GameData> listGames() throws DataAccessException {
-        return new ArrayList<>();
+        var statement = "SELECT gameID, whiteUsername, blackUsername, gameName, game FROM game";
+        var games = new ArrayList<GameData>();
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement);
+             var rs = preparedStatement.executeQuery()) {
+            while (rs.next()) {
+                games.add(readGame(rs));
+            }
+        } catch (SQLException ex) {
+            throw new DataAccessException("Error: unable to list games", ex);
+        }
+        return games;
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
+    }
+
+    private GameData readGame(ResultSet rs) throws SQLException {
+        ChessGame game = gson.fromJson(rs.getString("game"), ChessGame.class);
+        return new GameData(rs.getInt("gameID"), rs.getString("whiteUsername"),
+                rs.getString("blackUsername"), rs.getString("gameName"), game);
     }
 }
