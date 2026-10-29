@@ -5,6 +5,7 @@ import dataaccess.DataAccessException;
 import dataaccess.UserDAO;
 import model.AuthData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.UUID;
 
@@ -27,7 +28,8 @@ public class UserService {
             throw new AlreadyTakenException("username already taken");
         }
 
-        userDAO.createUser(new UserData(request.username(), request.password(), request.email()));
+        String hashedPassword = BCrypt.hashpw(request.password(), BCrypt.gensalt());
+        userDAO.createUser(new UserData(request.username(), hashedPassword, request.email()));
         String authToken = createAuth(request.username());
         return new RegisterResult(request.username(), authToken);
     }
@@ -38,7 +40,7 @@ public class UserService {
             throw new BadRequestException("missing username or password");
         }
         UserData user = userDAO.getUser(request.username());
-        if (user == null || !user.password().equals(request.password())) {
+        if (user == null || !BCrypt.checkpw(request.password(), user.password())) {
             throw new UnauthorizedException("wrong username or password");
         }
 

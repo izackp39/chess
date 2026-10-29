@@ -7,6 +7,7 @@ import dataaccess.UserDAO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserServiceTest {
     private UserDAO userDAO;
@@ -43,6 +44,15 @@ public class UserServiceTest {
     public void registerMissingField() {
         Assertions.assertThrows(BadRequestException.class, () ->
                 userService.register(new RegisterRequest("isaac", null, "isaac@byu.edu")));
+    }
+
+    @Test
+    public void registerHashesPassword() throws Exception {
+        userService.register(new RegisterRequest("isaac", "password", "isaac@byu.edu"));
+
+        String stored = userDAO.getUser("isaac").password();
+        Assertions.assertNotEquals("password", stored);
+        Assertions.assertTrue(BCrypt.checkpw("password", stored));
     }
 
     @Test
