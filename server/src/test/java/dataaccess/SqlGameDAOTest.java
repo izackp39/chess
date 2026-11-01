@@ -3,14 +3,11 @@ package dataaccess;
 import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPosition;
-
 import dataaccess.sql.SqlGameDAO;
 import model.GameData;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 public class SqlGameDAOTest {
     private SqlGameDAO gameDAO;

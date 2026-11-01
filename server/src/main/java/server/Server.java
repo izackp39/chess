@@ -11,12 +11,12 @@ import service.UserService;
 
 import com.google.gson.Gson;
 import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
-import dataaccess.MemoryAuthDAO;
-import dataaccess.MemoryGameDAO;
-import dataaccess.MemoryUserDAO;
 import dataaccess.UserDAO;
-
+import dataaccess.sql.SqlAuthDAO;
+import dataaccess.sql.SqlGameDAO;
+import dataaccess.sql.SqlUserDAO;
 import java.util.Map;
 
 public class Server {
@@ -24,11 +24,19 @@ public class Server {
     private final Javalin javalin;
 
     public Server() {
-        this(new MemoryUserDAO(), new MemoryAuthDAO(), new MemoryGameDAO());
+        try {
+            javalin = createJavalin(new SqlUserDAO(), new SqlAuthDAO(), new SqlGameDAO());
+        } catch (DataAccessException ex) {
+            throw new RuntimeException("Error: unable to initialize database", ex);
+        }
     }
 
     public Server(UserDAO userDAO, AuthDAO authDAO, GameDAO gameDAO) {
-        javalin = Javalin.create(config -> config.staticFiles.add("web"));
+        javalin = createJavalin(userDAO, authDAO, gameDAO);
+    }
+
+    private static Javalin createJavalin(UserDAO userDAO, AuthDAO authDAO, GameDAO gameDAO) {
+        Javalin javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
         // Register your endpoints and exception handlers here.
         ClearService clearService = new ClearService(userDAO, authDAO, gameDAO);
@@ -47,6 +55,8 @@ public class Server {
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));
         javalin.exception(AlreadyTakenException.class, (e, ctx) -> sendError(ctx, 403, "already taken"));
         javalin.exception(Exception.class, (e, ctx) -> sendError(ctx, 500, e.getMessage()));
+
+        return javalin;
     }
 
     public int run(int desiredPort) {

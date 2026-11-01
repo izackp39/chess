@@ -1,9 +1,10 @@
 package dataaccess.sql;
 
 import dataaccess.DataAccessException;
-import dataaccess.UserDAO;
 import dataaccess.DatabaseManager;
+import dataaccess.UserDAO;
 import model.UserData;
+
 import java.sql.SQLException;
 
 public class SqlUserDAO implements UserDAO {
