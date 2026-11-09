@@ -4,9 +4,9 @@ import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import model.LoginRequest;
+import model.LoginResult;
 import service.BadRequestException;
-import service.LoginRequest;
-import service.LoginResult;
 import service.UnauthorizedException;
 import service.UserService;
 

@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import model.ListGamesResult;
 import service.GameService;
-import service.ListGamesResult;
 import service.UnauthorizedException;
 
 public class ListGamesHandler implements Handler {

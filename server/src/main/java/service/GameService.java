@@ -5,7 +5,11 @@ import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
 import model.AuthData;
+import model.CreateGameRequest;
+import model.CreateGameResult;
 import model.GameData;
+import model.JoinGameRequest;
+import model.ListGamesResult;
 
 public class GameService {
     private final GameDAO gameDAO;

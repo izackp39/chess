@@ -4,10 +4,10 @@ import com.google.gson.Gson;
 import dataaccess.DataAccessException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import model.RegisterRequest;
+import model.RegisterResult;
 import service.AlreadyTakenException;
 import service.BadRequestException;
-import service.RegisterRequest;
-import service.RegisterResult;
 import service.UserService;
 
 public class RegisterHandler implements Handler {
