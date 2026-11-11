@@ -1,6 +1,8 @@
 package client;
 
 import com.google.gson.Gson;
+import model.LoginRequest;
+import model.LoginResult;
 import model.RegisterRequest;
 import model.RegisterResult;
 
@@ -28,6 +30,17 @@ public class ServerFacade {
         RegisterRequest body = new RegisterRequest(username, password, email);
         HttpRequest request = buildRequest("POST", "/user", body, null);
         return handleResponse(sendRequest(request), RegisterResult.class);
+    }
+
+    public LoginResult login(String username, String password) throws ResponseException {
+        LoginRequest body = new LoginRequest(username, password);
+        HttpRequest request = buildRequest("POST", "/session", body, null);
+        return handleResponse(sendRequest(request), LoginResult.class);
+    }
+
+    public void logout(String authToken) throws ResponseException {
+        HttpRequest request = buildRequest("DELETE", "/session", null, authToken);
+        handleResponse(sendRequest(request), null);
     }
 
     private HttpRequest buildRequest(String method, String path, Object body, String authToken) {
