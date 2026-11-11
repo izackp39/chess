@@ -1,9 +1,14 @@
 package client;
 
+import model.CreateGameResult;
+import model.GameData;
+import model.ListGamesResult;
 import model.LoginResult;
 import model.RegisterResult;
 import org.junit.jupiter.api.*;
 import server.Server;
+
+import java.util.List;
 
 
 public class ServerFacadeTests {
@@ -82,6 +87,39 @@ public class ServerFacadeTests {
     void logoutFailsWithInvalidToken() {
         ResponseException ex = Assertions.assertThrows(ResponseException.class,
                 () -> facade.logout("notARealToken"));
+        Assertions.assertEquals(401, ex.statusCode());
+    }
+
+    @Test
+    void createGameSucceeds() throws ResponseException {
+        String authToken = facade.register("player1", "password", "p1@email.com").authToken();
+        CreateGameResult result = facade.createGame(authToken, "game1");
+        Assertions.assertTrue(result.gameID() > 0);
+    }
+
+    @Test
+    void createGameFailsWithInvalidToken() {
+        ResponseException ex = Assertions.assertThrows(ResponseException.class,
+                () -> facade.createGame("notARealToken", "game1"));
+        Assertions.assertEquals(401, ex.statusCode());
+    }
+
+    @Test
+    void listGamesSucceeds() throws ResponseException {
+        String authToken = facade.register("player1", "password", "p1@email.com").authToken();
+        facade.createGame(authToken, "game1");
+        facade.createGame(authToken, "game2");
+
+        ListGamesResult result = facade.listGames(authToken);
+        List<String> names = result.games().stream().map(GameData::gameName).toList();
+        Assertions.assertEquals(2, names.size());
+        Assertions.assertTrue(names.containsAll(List.of("game1", "game2")));
+    }
+
+    @Test
+    void listGamesFailsWithInvalidToken() {
+        ResponseException ex = Assertions.assertThrows(ResponseException.class,
+                () -> facade.listGames("notARealToken"));
         Assertions.assertEquals(401, ex.statusCode());
     }
 }

@@ -1,6 +1,9 @@
 package client;
 
 import com.google.gson.Gson;
+import model.CreateGameRequest;
+import model.CreateGameResult;
+import model.ListGamesResult;
 import model.LoginRequest;
 import model.LoginResult;
 import model.RegisterRequest;
@@ -41,6 +44,17 @@ public class ServerFacade {
     public void logout(String authToken) throws ResponseException {
         HttpRequest request = buildRequest("DELETE", "/session", null, authToken);
         handleResponse(sendRequest(request), null);
+    }
+
+    public CreateGameResult createGame(String authToken, String gameName) throws ResponseException {
+        CreateGameRequest body = new CreateGameRequest(gameName);
+        HttpRequest request = buildRequest("POST", "/game", body, authToken);
+        return handleResponse(sendRequest(request), CreateGameResult.class);
+    }
+
+    public ListGamesResult listGames(String authToken) throws ResponseException {
+        HttpRequest request = buildRequest("GET", "/game", null, authToken);
+        return handleResponse(sendRequest(request), ListGamesResult.class);
     }
 
     private HttpRequest buildRequest(String method, String path, Object body, String authToken) {
