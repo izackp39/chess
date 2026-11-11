@@ -1,5 +1,6 @@
 package client;
 
+import model.RegisterResult;
 import org.junit.jupiter.api.*;
 import server.Server;
 
@@ -37,5 +38,20 @@ public class ServerFacadeTests {
     void clearFailsWhenServerUnreachable() {
         ServerFacade offlineFacade = new ServerFacade(1);
         Assertions.assertThrows(ResponseException.class, offlineFacade::clear);
+    }
+
+    @Test
+    void registerSucceeds() throws ResponseException {
+        RegisterResult result = facade.register("player1", "password", "p1@email.com");
+        Assertions.assertEquals("player1", result.username());
+        Assertions.assertTrue(result.authToken().length() > 10);
+    }
+
+    @Test
+    void registerFailsWhenUsernameTaken() throws ResponseException {
+        facade.register("player1", "password", "p1@email.com");
+        ResponseException ex = Assertions.assertThrows(ResponseException.class,
+                () -> facade.register("player1", "different", "other@email.com"));
+        Assertions.assertEquals(403, ex.statusCode());
     }
 }

@@ -1,6 +1,8 @@
 package client;
 
 import com.google.gson.Gson;
+import model.RegisterRequest;
+import model.RegisterResult;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,6 +22,12 @@ public class ServerFacade {
     public void clear() throws ResponseException {
         HttpRequest request = buildRequest("DELETE", "/db", null, null);
         handleResponse(sendRequest(request), null);
+    }
+
+    public RegisterResult register(String username, String password, String email) throws ResponseException {
+        RegisterRequest body = new RegisterRequest(username, password, email);
+        HttpRequest request = buildRequest("POST", "/user", body, null);
+        return handleResponse(sendRequest(request), RegisterResult.class);
     }
 
     private HttpRequest buildRequest(String method, String path, Object body, String authToken) {
