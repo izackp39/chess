@@ -1,9 +1,11 @@
 package client;
 
+import chess.ChessBoard;
 import chess.ChessGame;
 import model.GameData;
 import model.LoginResult;
 import model.RegisterResult;
+import ui.BoardRenderer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -141,7 +143,11 @@ public class ChessClient {
             return "Color must be WHITE or BLACK.";
         }
         server.joinGame(authToken, color, game.gameID());
-        return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
+        String message = "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
+        if (color == ChessGame.TeamColor.WHITE) {
+            return message + "\n" + drawStartingBoard();
+        }
+        return message;
     }
 
     private String observeGame(String[] params) {
@@ -152,7 +158,13 @@ public class ChessClient {
         if (game == null) {
             return invalidGameNumber();
         }
-        return "Observing '" + game.gameName() + "'.";
+        return "Observing '" + game.gameName() + "'.\n" + drawStartingBoard();
+    }
+
+    private String drawStartingBoard() {
+        ChessBoard board = new ChessBoard();
+        board.resetBoard();
+        return BoardRenderer.draw(board);
     }
 
     private GameData findListedGame(String number) {
