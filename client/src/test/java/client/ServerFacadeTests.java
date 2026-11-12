@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import model.CreateGameResult;
 import model.GameData;
 import model.ListGamesResult;
@@ -121,5 +122,29 @@ public class ServerFacadeTests {
         ResponseException ex = Assertions.assertThrows(ResponseException.class,
                 () -> facade.listGames("notARealToken"));
         Assertions.assertEquals(401, ex.statusCode());
+    }
+
+    @Test
+    void joinGameSucceeds() throws ResponseException {
+        String authToken = facade.register("player1", "password", "p1@email.com").authToken();
+        int gameID = facade.createGame(authToken, "game1").gameID();
+
+        facade.joinGame(authToken, ChessGame.TeamColor.WHITE, gameID);
+
+        GameData game = facade.listGames(authToken).games().iterator().next();
+        Assertions.assertEquals("player1", game.whiteUsername());
+        Assertions.assertNull(game.blackUsername());
+    }
+
+    @Test
+    void joinGameFailsWhenColorTaken() throws ResponseException {
+        String firstToken = facade.register("player1", "password", "p1@email.com").authToken();
+        String secondToken = facade.register("player2", "password", "p2@email.com").authToken();
+        int gameID = facade.createGame(firstToken, "game1").gameID();
+        facade.joinGame(firstToken, ChessGame.TeamColor.WHITE, gameID);
+
+        ResponseException ex = Assertions.assertThrows(ResponseException.class,
+                () -> facade.joinGame(secondToken, ChessGame.TeamColor.WHITE, gameID));
+        Assertions.assertEquals(403, ex.statusCode());
     }
 }
