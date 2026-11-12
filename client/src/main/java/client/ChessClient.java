@@ -1,15 +1,19 @@
 package client;
 
+import model.GameData;
 import model.LoginResult;
 import model.RegisterResult;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class ChessClient {
     private final ServerFacade server;
     private State state = State.SIGNEDOUT;
     private String username;
     private String authToken;
+    private List<GameData> listedGames = new ArrayList<>();
 
     public ChessClient(ServerFacade server) {
         this.server = server;
@@ -30,7 +34,7 @@ public class ChessClient {
             if (state == State.SIGNEDOUT) {
                 return evalSignedOut(command, params);
             }
-            return evalSignedIn(command);
+            return evalSignedIn(command, params);
         } catch (ResponseException ex) {
             return ex.getMessage();
         }
@@ -46,8 +50,11 @@ public class ChessClient {
         };
     }
 
-    private String evalSignedIn(String command) {
+    private String evalSignedIn(String command, String[] params) throws ResponseException {
         return switch (command) {
+            case "create" -> createGame(params);
+            case "list" -> listGames();
+            case "logout" -> logout();
             case "quit" -> quit();
             case "help" -> helpSignedIn();
             default -> unknownCommand();
@@ -78,6 +85,42 @@ public class ChessClient {
         state = State.SIGNEDIN;
     }
 
+    private String createGame(String[] params) throws ResponseException {
+        if (params.length == 0) {
+            return "Usage: create <NAME>";
+        }
+        String gameName = String.join(" ", params);
+        server.createGame(authToken, gameName);
+        return "Created game '" + gameName + "'. Type list to see it.";
+    }
+
+    private String listGames() throws ResponseException {
+        listedGames = new ArrayList<>(server.listGames(authToken).games());
+        if (listedGames.isEmpty()) {
+            return "No games yet. Create one with: create <NAME>";
+        }
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < listedGames.size(); i++) {
+            GameData game = listedGames.get(i);
+            result.append(String.format("%d. %s  (white: %s, black: %s)%n", i + 1, game.gameName(),
+                    playerOrOpen(game.whiteUsername()), playerOrOpen(game.blackUsername())));
+        }
+        return result.toString().trim();
+    }
+
+    private String playerOrOpen(String player) {
+        return (player == null) ? "open" : player;
+    }
+
+    private String logout() throws ResponseException {
+        server.logout(authToken);
+        username = null;
+        authToken = null;
+        listedGames = new ArrayList<>();
+        state = State.SIGNEDOUT;
+        return "Logged out.";
+    }
+
     private String quit() {
         state = State.QUIT;
         return "Goodbye!";
@@ -97,6 +140,9 @@ public class ChessClient {
 
     private String helpSignedIn() {
         return """
+                create <NAME> - a game
+                list - games
+                logout - when you are done
                 quit - playing chess
                 help - with possible commands""";
     }
