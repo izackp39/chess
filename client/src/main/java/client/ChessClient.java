@@ -1,5 +1,6 @@
 package client;
 
+import chess.ChessGame;
 import model.GameData;
 import model.LoginResult;
 import model.RegisterResult;
@@ -54,6 +55,8 @@ public class ChessClient {
         return switch (command) {
             case "create" -> createGame(params);
             case "list" -> listGames();
+            case "join" -> joinGame(params);
+            case "observe" -> observeGame(params);
             case "logout" -> logout();
             case "quit" -> quit();
             case "help" -> helpSignedIn();
@@ -112,6 +115,56 @@ public class ChessClient {
         return (player == null) ? "open" : player;
     }
 
+    private String joinGame(String[] params) throws ResponseException {
+        if (params.length != 2) {
+            return "Usage: join <NUMBER> <WHITE|BLACK>";
+        }
+        GameData game = findListedGame(params[0]);
+        if (game == null) {
+            return invalidGameNumber();
+        }
+        ChessGame.TeamColor color = parseColor(params[1]);
+        if (color == null) {
+            return "Color must be WHITE or BLACK.";
+        }
+        server.joinGame(authToken, color, game.gameID());
+        return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
+    }
+
+    private String observeGame(String[] params) {
+        if (params.length != 1) {
+            return "Usage: observe <NUMBER>";
+        }
+        GameData game = findListedGame(params[0]);
+        if (game == null) {
+            return invalidGameNumber();
+        }
+        return "Observing '" + game.gameName() + "'.";
+    }
+
+    private GameData findListedGame(String number) {
+        if (!number.matches("\\d{1,9}")) {
+            return null;
+        }
+        int index = Integer.parseInt(number) - 1;
+        return (index >= 0 && index < listedGames.size()) ? listedGames.get(index) : null;
+    }
+
+    private String invalidGameNumber() {
+        if (listedGames.isEmpty()) {
+            return "No games listed yet. Type list first, then use a number from the list.";
+        }
+        return "Game number must be between 1 and " + listedGames.size() + ". Type list to see the games.";
+    }
+
+    private ChessGame.TeamColor parseColor(String color) {
+        return switch (color.toLowerCase()) {
+            case "white" -> ChessGame.TeamColor.WHITE;
+            case "black" -> ChessGame.TeamColor.BLACK;
+            default -> null;
+        };
+    }
+
     private String logout() throws ResponseException {
         server.logout(authToken);
         username = null;
@@ -142,6 +195,8 @@ public class ChessClient {
         return """
                 create <NAME> - a game
                 list - games
+                join <NUMBER> <WHITE|BLACK> - a game
+                observe <NUMBER> - a game
                 logout - when you are done
                 quit - playing chess
                 help - with possible commands""";
