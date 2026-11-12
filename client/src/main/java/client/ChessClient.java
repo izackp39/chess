@@ -37,8 +37,21 @@ public class ChessClient {
             }
             return evalSignedIn(command, params);
         } catch (ResponseException ex) {
-            return ex.getMessage();
+            return friendlyError(command, ex.statusCode());
         }
+    }
+
+    private String friendlyError(String command, int statusCode) {
+        return switch (statusCode) {
+            case 400 -> "Some of that information was missing or invalid. Type help to check the format.";
+            case 401 -> command.equals("login")
+                    ? "Wrong username or password."
+                    : "You're not authorized to do that. Try logging out and back in.";
+            case 403 -> command.equals("register")
+                    ? "That username is already taken."
+                    : "That color is already taken in this game. Type list to see open seats.";
+            default -> "Couldn't reach the chess server, or it had a problem. Make sure it's running and try again.";
+        };
     }
 
     private String evalSignedOut(String command, String[] params) throws ResponseException {

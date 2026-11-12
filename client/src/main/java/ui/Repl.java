@@ -22,8 +22,19 @@ public class Repl {
         Scanner scanner = new Scanner(System.in);
         while (client.state() != State.QUIT) {
             printPrompt();
-            String result = client.eval(scanner.nextLine());
+            if (!scanner.hasNextLine()) {
+                break;
+            }
+            String result = evalSafely(scanner.nextLine());
             System.out.println(SET_TEXT_COLOR_BLUE + result + RESET_TEXT_COLOR);
+        }
+    }
+
+    private String evalSafely(String line) {
+        try {
+            return client.eval(line);
+        } catch (RuntimeException ex) {
+            return "Something went wrong. Please try again.";
         }
     }
 
