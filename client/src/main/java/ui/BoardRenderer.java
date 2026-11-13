@@ -19,10 +19,13 @@ import static ui.EscapeSequences.SET_TEXT_COLOR_RED;
 public class BoardRenderer {
     private static final String[] COLUMN_LETTERS = {"a", "b", "c", "d", "e", "f", "g", "h"};
     private static final String EMPTY_SQUARE = "   ";
+    private static final int[] ASCENDING = {1, 2, 3, 4, 5, 6, 7, 8};
+    private static final int[] DESCENDING = {8, 7, 6, 5, 4, 3, 2, 1};
 
-    public static String draw(ChessBoard board) {
-        int[] rows = {8, 7, 6, 5, 4, 3, 2, 1};
-        int[] columns = {1, 2, 3, 4, 5, 6, 7, 8};
+    public static String draw(ChessBoard board, ChessGame.TeamColor perspective) {
+        boolean whiteView = (perspective == ChessGame.TeamColor.WHITE);
+        int[] rows = whiteView ? DESCENDING : ASCENDING;
+        int[] columns = whiteView ? ASCENDING : DESCENDING;
 
         StringBuilder out = new StringBuilder();
         appendColumnLabels(out, columns);

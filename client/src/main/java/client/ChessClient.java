@@ -143,11 +143,8 @@ public class ChessClient {
             return "Color must be WHITE or BLACK.";
         }
         server.joinGame(authToken, color, game.gameID());
-        String message = "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
-        if (color == ChessGame.TeamColor.WHITE) {
-            return message + "\n" + drawStartingBoard();
-        }
-        return message;
+        return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".\n"
+                + drawStartingBoard(color);
     }
 
     private String observeGame(String[] params) {
@@ -158,13 +155,13 @@ public class ChessClient {
         if (game == null) {
             return invalidGameNumber();
         }
-        return "Observing '" + game.gameName() + "'.\n" + drawStartingBoard();
+        return "Observing '" + game.gameName() + "'.\n" + drawStartingBoard(ChessGame.TeamColor.WHITE);
     }
 
-    private String drawStartingBoard() {
+    private String drawStartingBoard(ChessGame.TeamColor perspective) {
         ChessBoard board = new ChessBoard();
         board.resetBoard();
-        return BoardRenderer.draw(board);
+        return BoardRenderer.draw(board, perspective);
     }
 
     private GameData findListedGame(String number) {
