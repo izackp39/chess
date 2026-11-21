@@ -2,10 +2,12 @@ package server;
 
 import io.javalin.*;
 import io.javalin.http.Context;
+import server.websocket.WebSocketHandler;
 import service.AlreadyTakenException;
 import service.BadRequestException;
 import service.ClearService;
 import service.GameService;
+import service.GameplayService;
 import service.UnauthorizedException;
 import service.UserService;
 
@@ -50,6 +52,13 @@ public class Server {
         javalin.post("/game", new CreateGameHandler(gameService));
         javalin.get("/game", new ListGamesHandler(gameService));
         javalin.put("/game", new JoinGameHandler(gameService));
+
+        WebSocketHandler webSocketHandler = new WebSocketHandler(new GameplayService(gameDAO, authDAO));
+        javalin.ws("/ws", ws -> {
+            ws.onConnect(webSocketHandler);
+            ws.onMessage(webSocketHandler);
+            ws.onClose(webSocketHandler);
+        });
 
         javalin.exception(BadRequestException.class, (e, ctx) -> sendError(ctx, 400, "bad request"));
         javalin.exception(UnauthorizedException.class, (e, ctx) -> sendError(ctx, 401, "unauthorized"));

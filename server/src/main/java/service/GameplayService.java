@@ -1,0 +1,37 @@
+package service;
+
+import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
+import dataaccess.GameDAO;
+import model.AuthData;
+import model.GameData;
+
+/**
+ * Game rules behind the WebSocket gameplay commands, kept separate from
+ * the networking code in WebSocketHandler
+ */
+public class GameplayService {
+    private final GameDAO gameDAO;
+    private final AuthDAO authDAO;
+
+    public GameplayService(GameDAO gameDAO, AuthDAO authDAO) {
+        this.gameDAO = gameDAO;
+        this.authDAO = authDAO;
+    }
+
+    public AuthData authenticate(String authToken) throws UnauthorizedException, DataAccessException {
+        AuthData auth = (authToken == null) ? null : authDAO.getAuth(authToken);
+        if (auth == null) {
+            throw new UnauthorizedException("invalid auth token");
+        }
+        return auth;
+    }
+
+    public GameData getGame(Integer gameID) throws BadRequestException, DataAccessException {
+        GameData game = (gameID == null) ? null : gameDAO.getGame(gameID);
+        if (game == null) {
+            throw new BadRequestException("game does not exist");
+        }
+        return game;
+    }
+}
