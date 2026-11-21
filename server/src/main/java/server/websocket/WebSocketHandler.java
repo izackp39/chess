@@ -57,6 +57,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                     ChessMove move = gson.fromJson(ctx.message(), MakeMoveCommand.class).getMove();
                     makeMove(session, auth, game, move);
                 }
+                case LEAVE -> leave(session, auth, game);
                 default -> sendError(session, "unsupported command");
             }
         } catch (IOException ex) {
@@ -98,6 +99,14 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         if (status != null) {
             connections.broadcast(gameID, new NotificationMessage(status), null);
         }
+    }
+
+    private void leave(Session session, AuthData auth, GameData game)
+            throws DataAccessException, IOException {
+        gameplay.leave(game, auth.username());
+        connections.remove(game.gameID(), session);
+        String message = String.format("%s left the game", auth.username());
+        connections.broadcast(game.gameID(), new NotificationMessage(message), session);
     }
 
     /**

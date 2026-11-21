@@ -77,4 +77,17 @@ public class GameplayService {
         }
         gameDAO.updateGame(game);
     }
+
+    /**
+     * Removes the user from their seat in the game, if they have one, and saves the game.
+     * Observers have no seat, so nothing changes for them.
+     */
+    public void leave(GameData game, String username) throws DataAccessException {
+        ChessGame.TeamColor color = playerColor(game, username);
+        if (color == ChessGame.TeamColor.WHITE) {
+            gameDAO.updateGame(new GameData(game.gameID(), null, game.blackUsername(), game.gameName(), game.game()));
+        } else if (color == ChessGame.TeamColor.BLACK) {
+            gameDAO.updateGame(new GameData(game.gameID(), game.whiteUsername(), null, game.gameName(), game.game()));
+        }
+    }
 }
