@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessGame;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
@@ -33,5 +34,18 @@ public class GameplayService {
             throw new BadRequestException("game does not exist");
         }
         return game;
+    }
+
+    /**
+     * @return the color this user is playing in the game, or null if they are an observer
+     */
+    public ChessGame.TeamColor playerColor(GameData game, String username) {
+        if (username.equals(game.whiteUsername())) {
+            return ChessGame.TeamColor.WHITE;
+        }
+        if (username.equals(game.blackUsername())) {
+            return ChessGame.TeamColor.BLACK;
+        }
+        return null;
     }
 }
