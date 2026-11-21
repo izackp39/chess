@@ -79,6 +79,21 @@ public class GameplayService {
     }
 
     /**
+     * Ends the game because the given player resigned, then saves the game
+     */
+    public void resign(GameData game, String username) throws BadRequestException, DataAccessException {
+        if (playerColor(game, username) == null) {
+            throw new BadRequestException("observers cannot resign");
+        }
+        ChessGame chess = game.game();
+        if (chess.isGameOver()) {
+            throw new BadRequestException("the game is already over");
+        }
+        chess.setGameOver(true);
+        gameDAO.updateGame(game);
+    }
+
+    /**
      * Removes the user from their seat in the game, if they have one, and saves the game.
      * Observers have no seat, so nothing changes for them.
      */

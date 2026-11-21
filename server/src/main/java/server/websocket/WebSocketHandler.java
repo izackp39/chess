@@ -49,6 +49,9 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         Session session = ctx.session;
         try {
             UserGameCommand command = gson.fromJson(ctx.message(), UserGameCommand.class);
+            if (command == null || command.getCommandType() == null) {
+                throw new BadRequestException("missing command type");
+            }
             AuthData auth = gameplay.authenticate(command.getAuthToken());
             GameData game = gameplay.getGame(command.getGameID());
             switch (command.getCommandType()) {
@@ -58,7 +61,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                     makeMove(session, auth, game, move);
                 }
                 case LEAVE -> leave(session, auth, game);
-                default -> sendError(session, "unsupported command");
+                case RESIGN -> resign(session, auth, game);
             }
         } catch (IOException ex) {
             System.err.println("Unable to send WebSocket message: " + ex.getMessage());
@@ -107,6 +110,13 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         connections.remove(game.gameID(), session);
         String message = String.format("%s left the game", auth.username());
         connections.broadcast(game.gameID(), new NotificationMessage(message), session);
+    }
+
+    private void resign(Session session, AuthData auth, GameData game)
+            throws BadRequestException, DataAccessException, IOException {
+        gameplay.resign(game, auth.username());
+        String message = String.format("%s resigned the game", auth.username());
+        connections.broadcast(game.gameID(), new NotificationMessage(message), null);
     }
 
     /**
