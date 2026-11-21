@@ -1,6 +1,8 @@
 package server.websocket;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import dataaccess.DataAccessException;
@@ -16,6 +18,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import service.BadRequestException;
 import service.GameplayService;
 import service.UnauthorizedException;
+import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
@@ -50,6 +53,10 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             GameData game = gameplay.getGame(command.getGameID());
             switch (command.getCommandType()) {
                 case CONNECT -> connect(session, auth, game);
+                case MAKE_MOVE -> {
+                    ChessMove move = gson.fromJson(ctx.message(), MakeMoveCommand.class).getMove();
+                    makeMove(session, auth, game, move);
+                }
                 default -> sendError(session, "unsupported command");
             }
         } catch (IOException ex) {
@@ -76,6 +83,57 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         String role = (color == null) ? "an observer" : color.toString().toLowerCase();
         String message = String.format("%s joined the game as %s", auth.username(), role);
         connections.broadcast(game.gameID(), new NotificationMessage(message), session);
+    }
+
+    private void makeMove(Session session, AuthData auth, GameData game, ChessMove move)
+            throws BadRequestException, DataAccessException, IOException {
+        gameplay.makeMove(game, auth.username(), move);
+        int gameID = game.gameID();
+
+        connections.broadcast(gameID, new LoadGameMessage(game.game()), null);
+        String moved = String.format("%s moved %s", auth.username(), describe(move));
+        connections.broadcast(gameID, new NotificationMessage(moved), session);
+
+        String status = statusMessage(game);
+        if (status != null) {
+            connections.broadcast(gameID, new NotificationMessage(status), null);
+        }
+    }
+
+    /**
+     * Describes a move in board notation, e.g. "e2 to e4"
+     */
+    private static String describe(ChessMove move) {
+        String text = squareName(move.getStartPosition()) + " to " + squareName(move.getEndPosition());
+        if (move.getPromotionPiece() != null) {
+            text += " (promoted to " + move.getPromotionPiece().toString().toLowerCase() + ")";
+        }
+        return text;
+    }
+
+    private static String squareName(ChessPosition position) {
+        char file = (char) ('a' + position.getColumn() - 1);
+        return file + Integer.toString(position.getRow());
+    }
+
+    /**
+     * Describes checkmate, stalemate, or check for the player whose turn it now is,
+     * or returns null if none applies
+     */
+    private static String statusMessage(GameData game) {
+        ChessGame chess = game.game();
+        ChessGame.TeamColor toMove = chess.getTeamTurn();
+        String player = (toMove == ChessGame.TeamColor.WHITE) ? game.whiteUsername() : game.blackUsername();
+        if (chess.isInCheckmate(toMove)) {
+            return player + " is in checkmate";
+        }
+        if (chess.isInStalemate(toMove)) {
+            return player + " is in stalemate";
+        }
+        if (chess.isInCheck(toMove)) {
+            return player + " is in check";
+        }
+        return null;
     }
 
     private void sendError(Session session, String reason) {

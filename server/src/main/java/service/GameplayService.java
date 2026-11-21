@@ -1,6 +1,8 @@
 package service;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
@@ -47,5 +49,32 @@ public class GameplayService {
             return ChessGame.TeamColor.BLACK;
         }
         return null;
+    }
+
+    /**
+     * Validates and applies a move for the given user, then saves the updated game
+     */
+    public void makeMove(GameData game, String username, ChessMove move)
+            throws BadRequestException, DataAccessException {
+        if (move == null) {
+            throw new BadRequestException("missing move");
+        }
+        ChessGame chess = game.game();
+        ChessGame.TeamColor color = playerColor(game, username);
+        if (color == null) {
+            throw new BadRequestException("observers cannot make moves");
+        }
+        if (chess.isGameOver()) {
+            throw new BadRequestException("the game is over");
+        }
+        if (color != chess.getTeamTurn()) {
+            throw new BadRequestException("it is not your turn");
+        }
+        try {
+            chess.makeMove(move);
+        } catch (InvalidMoveException ex) {
+            throw new BadRequestException("invalid move");
+        }
+        gameDAO.updateGame(game);
     }
 }
