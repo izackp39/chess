@@ -23,6 +23,8 @@ public class ChessGame {
     private boolean blackRookAMoved;
     private boolean blackRookHMoved;
 
+    private boolean gameOver;
+
     /**
      * Creates a new game with a standard starting board and white to move
      */
@@ -33,7 +35,7 @@ public class ChessGame {
     }
 
     /**
-     * Two games are equal if their boards, turn, and castling flags all match
+     * Two games are equal if their boards, turn, castling flags, and game-over state all match
      */
     @Override
     public boolean equals(Object o) {
@@ -50,7 +52,8 @@ public class ChessGame {
                 && whiteRookHMoved == that.whiteRookHMoved
                 && blackKingMoved == that.blackKingMoved
                 && blackRookAMoved == that.blackRookAMoved
-                && blackRookHMoved == that.blackRookHMoved;
+                && blackRookHMoved == that.blackRookHMoved
+                && gameOver == that.gameOver;
     }
 
     /**
@@ -59,7 +62,7 @@ public class ChessGame {
     @Override
     public int hashCode() {
         return Objects.hash(board, teamTurn, whiteKingMoved, whiteRookAMoved, whiteRookHMoved,
-                blackKingMoved, blackRookAMoved, blackRookHMoved);
+                blackKingMoved, blackRookAMoved, blackRookHMoved, gameOver);
     }
 
     /**
@@ -76,6 +79,22 @@ public class ChessGame {
      */
     public void setTeamTurn(TeamColor team) {
         teamTurn = team;
+    }
+
+    /**
+     * @return True if the game has ended by checkmate, stalemate, or resignation
+     */
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    /**
+     * Marks the game as over (e.g. when a player resigns) or not over
+     *
+     * @param gameOver whether the game has ended
+     */
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
     }
 
     /**
@@ -130,6 +149,10 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
+        if (gameOver) {
+            throw new InvalidMoveException("The game is over");
+        }
+
         var piece = board.getPiece(move.getStartPosition());
         if (piece == null || piece.getTeamColor() != teamTurn) {
             throw new InvalidMoveException("No piece belonging to the current team at " + move.getStartPosition());
@@ -142,6 +165,9 @@ public class ChessGame {
 
         executeMove(board, move);
         teamTurn = opponent(teamTurn);
+        if (isInCheckmate(teamTurn) || isInStalemate(teamTurn)) {
+            gameOver = true;
+        }
     }
 
     /**
@@ -259,6 +285,7 @@ public class ChessGame {
         blackKingMoved = false;
         blackRookAMoved = false;
         blackRookHMoved = false;
+        gameOver = false;
     }
 
     /**
