@@ -15,6 +15,7 @@ public class Repl {
 
     public Repl(ChessClient client) {
         this.client = client;
+        client.setDisplay(this::printAsync);
     }
 
     public void run() {
@@ -36,6 +37,15 @@ public class Repl {
         } catch (RuntimeException ex) {
             return "Something went wrong. Please try again.";
         }
+    }
+
+    /**
+     * Prints a message that arrived from the server while the user may be typing,
+     * then reprints the prompt so the screen is ready for input again
+     */
+    private synchronized void printAsync(String text) {
+        System.out.println("\n" + SET_TEXT_COLOR_BLUE + text + RESET_TEXT_COLOR);
+        printPrompt();
     }
 
     private void printPrompt() {

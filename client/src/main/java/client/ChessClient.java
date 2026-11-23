@@ -1,22 +1,29 @@
 package client;
 
-import chess.ChessBoard;
 import chess.ChessGame;
 import model.GameData;
 import model.LoginResult;
 import model.RegisterResult;
 import ui.BoardRenderer;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
+import websocket.messages.ServerMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
-public class ChessClient {
+public class ChessClient implements ServerMessageObserver {
     private final ServerFacade server;
     private State state = State.SIGNEDOUT;
     private String username;
     private String authToken;
     private List<GameData> listedGames = new ArrayList<>();
+    private volatile ChessGame currentGame;
+    private ChessGame.TeamColor perspective = ChessGame.TeamColor.WHITE;
+    private Consumer<String> display = System.out::println;
 
     public ChessClient(ServerFacade server) {
         this.server = server;
@@ -24,6 +31,26 @@ public class ChessClient {
 
     public State state() {
         return state;
+    }
+
+    /**
+     * Sets where messages that arrive from the server (outside of eval) are printed
+     */
+    public void setDisplay(Consumer<String> display) {
+        this.display = display;
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        String text = switch (message.getServerMessageType()) {
+            case LOAD_GAME -> {
+                currentGame = ((LoadGameMessage) message).getGame();
+                yield BoardRenderer.draw(currentGame.getBoard(), perspective);
+            }
+            case NOTIFICATION -> ((NotificationMessage) message).getMessage();
+            case ERROR -> ((ErrorMessage) message).getErrorMessage();
+        };
+        display.accept(text);
     }
 
     public String eval(String input) {
@@ -143,11 +170,12 @@ public class ChessClient {
             return "Color must be WHITE or BLACK.";
         }
         server.joinGame(authToken, color, game.gameID());
-        return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".\n"
-                + drawStartingBoard(color);
+        perspective = color;
+        server.connect(authToken, game.gameID(), this);
+        return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
     }
 
-    private String observeGame(String[] params) {
+    private String observeGame(String[] params) throws ResponseException {
         if (params.length != 1) {
             return "Usage: observe <NUMBER>";
         }
@@ -155,13 +183,9 @@ public class ChessClient {
         if (game == null) {
             return invalidGameNumber();
         }
-        return "Observing '" + game.gameName() + "'.\n" + drawStartingBoard(ChessGame.TeamColor.WHITE);
-    }
-
-    private String drawStartingBoard(ChessGame.TeamColor perspective) {
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
-        return BoardRenderer.draw(board, perspective);
+        perspective = ChessGame.TeamColor.WHITE;
+        server.connect(authToken, game.gameID(), this);
+        return "Observing '" + game.gameName() + "'.";
     }
 
     private GameData findListedGame(String number) {
@@ -188,6 +212,7 @@ public class ChessClient {
     }
 
     private String logout() throws ResponseException {
+        server.disconnect();
         server.logout(authToken);
         username = null;
         authToken = null;
@@ -197,6 +222,7 @@ public class ChessClient {
     }
 
     private String quit() {
+        server.disconnect();
         state = State.QUIT;
         return "Goodbye!";
     }

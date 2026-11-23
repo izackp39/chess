@@ -10,6 +10,7 @@ import model.LoginRequest;
 import model.LoginResult;
 import model.RegisterRequest;
 import model.RegisterResult;
+import websocket.commands.UserGameCommand;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,9 +22,27 @@ public class ServerFacade {
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
     private final String serverUrl;
+    private WebSocketCommunicator webSocket;
 
     public ServerFacade(int port) {
         serverUrl = "http://localhost:" + port;
+    }
+
+    /**
+     * Opens a WebSocket connection for a game and sends CONNECT. Messages the
+     * server sends back are passed to the observer.
+     */
+    public void connect(String authToken, int gameID, ServerMessageObserver observer) throws ResponseException {
+        disconnect();
+        webSocket = new WebSocketCommunicator(serverUrl, observer);
+        webSocket.send(new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID));
+    }
+
+    public void disconnect() {
+        if (webSocket != null) {
+            webSocket.close();
+            webSocket = null;
+        }
     }
 
     public void clear() throws ResponseException {
