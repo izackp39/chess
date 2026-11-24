@@ -15,7 +15,9 @@ import websocket.messages.ServerMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class ChessClient implements ServerMessageObserver {
@@ -120,6 +122,7 @@ public class ChessClient implements ServerMessageObserver {
         return switch (command) {
             case "redraw" -> redraw();
             case "move" -> makeMove(params);
+            case "highlight" -> highlight(params);
             case "resign" -> resign();
             case "leave" -> leave();
             case "help" -> helpGameplay();
@@ -282,6 +285,32 @@ public class ChessClient implements ServerMessageObserver {
         return piece != null && piece.getPieceType() == ChessPiece.PieceType.PAWN && lastRow;
     }
 
+    /**
+     * Redraws the board locally with the piece's legal moves highlighted. Nothing is sent to the server.
+     */
+    private String highlight(String[] params) {
+        if (params.length != 1) {
+            return "Usage: highlight <SQUARE>  e.g. highlight e2";
+        }
+        ChessPosition square = parsePosition(params[0]);
+        if (square == null) {
+            return "Squares look like e2 or h8 (a letter a-h, then a number 1-8).";
+        }
+        ChessGame game = currentGame;
+        if (game == null) {
+            return "The board hasn't loaded yet. Try again in a moment.";
+        }
+        if (game.getBoard().getPiece(square) == null) {
+            return "There's no piece on " + params[0].toLowerCase() + ".";
+        }
+        Set<ChessPosition> targets = new HashSet<>();
+        for (ChessMove move : game.validMoves(square)) {
+            targets.add(move.getEndPosition());
+        }
+        String board = BoardRenderer.draw(game.getBoard(), perspective, square, targets);
+        return targets.isEmpty() ? board + "\nThat piece has no legal moves." : board;
+    }
+
     private String resign() {
         if (observing) {
             return "Observers can't resign. Type leave to stop watching.";
@@ -376,6 +405,7 @@ public class ChessClient implements ServerMessageObserver {
         return """
                 redraw - the chess board
                 move <FROM> <TO> [QUEEN|ROOK|BISHOP|KNIGHT] - a piece, e.g. move e2 e4
+                highlight <SQUARE> - legal moves for a piece, e.g. highlight e2
                 resign - forfeit the game (you'll be asked to confirm)
                 leave - the game
                 help - with possible commands""";

@@ -5,12 +5,18 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
+import java.util.Collection;
+import java.util.Set;
+
 import static ui.EscapeSequences.RESET_BG_COLOR;
 import static ui.EscapeSequences.RESET_TEXT_BOLD_FAINT;
 import static ui.EscapeSequences.RESET_TEXT_COLOR;
 import static ui.EscapeSequences.SET_BG_COLOR_BLACK;
+import static ui.EscapeSequences.SET_BG_COLOR_DARK_GREEN;
+import static ui.EscapeSequences.SET_BG_COLOR_GREEN;
 import static ui.EscapeSequences.SET_BG_COLOR_LIGHT_GREY;
 import static ui.EscapeSequences.SET_BG_COLOR_WHITE;
+import static ui.EscapeSequences.SET_BG_COLOR_YELLOW;
 import static ui.EscapeSequences.SET_TEXT_BOLD;
 import static ui.EscapeSequences.SET_TEXT_COLOR_BLACK;
 import static ui.EscapeSequences.SET_TEXT_COLOR_BLUE;
@@ -23,6 +29,14 @@ public class BoardRenderer {
     private static final int[] DESCENDING = {8, 7, 6, 5, 4, 3, 2, 1};
 
     public static String draw(ChessBoard board, ChessGame.TeamColor perspective) {
+        return draw(board, perspective, null, Set.of());
+    }
+
+    /**
+     * Draws the board with the selected square in yellow and the squares in targets in green
+     */
+    public static String draw(ChessBoard board, ChessGame.TeamColor perspective,
+                              ChessPosition selected, Collection<ChessPosition> targets) {
         boolean whiteView = (perspective == ChessGame.TeamColor.WHITE);
         int[] rows = whiteView ? DESCENDING : ASCENDING;
         int[] columns = whiteView ? ASCENDING : DESCENDING;
@@ -30,7 +44,7 @@ public class BoardRenderer {
         StringBuilder out = new StringBuilder();
         appendColumnLabels(out, columns);
         for (int row : rows) {
-            appendRow(out, board, row, columns);
+            appendRow(out, board, row, columns, selected, targets);
         }
         appendColumnLabels(out, columns);
         return out.toString().stripTrailing();
@@ -45,11 +59,13 @@ public class BoardRenderer {
         endLine(out);
     }
 
-    private static void appendRow(StringBuilder out, ChessBoard board, int row, int[] columns) {
+    private static void appendRow(StringBuilder out, ChessBoard board, int row, int[] columns,
+                                  ChessPosition selected, Collection<ChessPosition> targets) {
         appendRowLabel(out, row);
         for (int column : columns) {
-            out.append(isLightSquare(row, column) ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK);
-            out.append(pieceText(board.getPiece(new ChessPosition(row, column))));
+            ChessPosition position = new ChessPosition(row, column);
+            out.append(squareColor(position, selected, targets));
+            out.append(pieceText(board.getPiece(position)));
         }
         appendRowLabel(out, row);
         endLine(out);
@@ -57,6 +73,18 @@ public class BoardRenderer {
 
     private static void appendRowLabel(StringBuilder out, int row) {
         out.append(SET_BG_COLOR_LIGHT_GREY).append(SET_TEXT_COLOR_BLACK).append(" ").append(row).append(" ");
+    }
+
+    private static String squareColor(ChessPosition position, ChessPosition selected,
+                                      Collection<ChessPosition> targets) {
+        boolean light = isLightSquare(position.getRow(), position.getColumn());
+        if (position.equals(selected)) {
+            return SET_BG_COLOR_YELLOW;
+        }
+        if (targets.contains(position)) {
+            return light ? SET_BG_COLOR_GREEN : SET_BG_COLOR_DARK_GREEN;
+        }
+        return light ? SET_BG_COLOR_WHITE : SET_BG_COLOR_BLACK;
     }
 
     private static boolean isLightSquare(int row, int column) {
