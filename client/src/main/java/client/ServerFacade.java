@@ -38,6 +38,21 @@ public class ServerFacade {
         webSocket.send(new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID));
     }
 
+    /**
+     * Tells the server the user is leaving the game, then closes the WebSocket connection
+     */
+    public void leave(String authToken, int gameID) throws ResponseException {
+        sendGameCommand(new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID));
+        disconnect();
+    }
+
+    private void sendGameCommand(UserGameCommand command) throws ResponseException {
+        if (webSocket == null) {
+            throw new ResponseException(500, "Not connected to a game");
+        }
+        webSocket.send(command);
+    }
+
     public void disconnect() {
         if (webSocket != null) {
             webSocket.close();

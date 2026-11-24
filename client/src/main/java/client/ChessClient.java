@@ -21,6 +21,7 @@ public class ChessClient implements ServerMessageObserver {
     private String username;
     private String authToken;
     private List<GameData> listedGames = new ArrayList<>();
+    private Integer currentGameID;
     private volatile ChessGame currentGame;
     private ChessGame.TeamColor perspective = ChessGame.TeamColor.WHITE;
     private Consumer<String> display = System.out::println;
@@ -61,10 +62,11 @@ public class ChessClient implements ServerMessageObserver {
             return "";
         }
         try {
-            if (state == State.SIGNEDOUT) {
-                return evalSignedOut(command, params);
-            }
-            return evalSignedIn(command, params);
+            return switch (state) {
+                case SIGNEDOUT -> evalSignedOut(command, params);
+                case GAMEPLAY -> evalGameplay(command, params);
+                default -> evalSignedIn(command, params);
+            };
         } catch (ResponseException ex) {
             return friendlyError(command, ex.statusCode());
         }
@@ -102,6 +104,15 @@ public class ChessClient implements ServerMessageObserver {
             case "logout" -> logout();
             case "quit" -> quit();
             case "help" -> helpSignedIn();
+            default -> unknownCommand();
+        };
+    }
+
+    private String evalGameplay(String command, String[] params) throws ResponseException {
+        return switch (command) {
+            case "redraw" -> redraw();
+            case "leave" -> leave();
+            case "help" -> helpGameplay();
             default -> unknownCommand();
         };
     }
@@ -171,7 +182,7 @@ public class ChessClient implements ServerMessageObserver {
         }
         server.joinGame(authToken, color, game.gameID());
         perspective = color;
-        server.connect(authToken, game.gameID(), this);
+        enterGame(game.gameID());
         return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
     }
 
@@ -184,8 +195,29 @@ public class ChessClient implements ServerMessageObserver {
             return invalidGameNumber();
         }
         perspective = ChessGame.TeamColor.WHITE;
-        server.connect(authToken, game.gameID(), this);
+        enterGame(game.gameID());
         return "Observing '" + game.gameName() + "'.";
+    }
+
+    private void enterGame(int gameID) throws ResponseException {
+        server.connect(authToken, gameID, this);
+        currentGameID = gameID;
+        state = State.GAMEPLAY;
+    }
+
+    private String redraw() {
+        if (currentGame == null) {
+            return "The board hasn't loaded yet. Try again in a moment.";
+        }
+        return BoardRenderer.draw(currentGame.getBoard(), perspective);
+    }
+
+    private String leave() throws ResponseException {
+        server.leave(authToken, currentGameID);
+        currentGameID = null;
+        currentGame = null;
+        state = State.SIGNEDIN;
+        return "You left the game.";
     }
 
     private GameData findListedGame(String number) {
@@ -247,6 +279,13 @@ public class ChessClient implements ServerMessageObserver {
                 observe <NUMBER> - a game
                 logout - when you are done
                 quit - playing chess
+                help - with possible commands""";
+    }
+
+    private String helpGameplay() {
+        return """
+                redraw - the chess board
+                leave - the game
                 help - with possible commands""";
     }
 }

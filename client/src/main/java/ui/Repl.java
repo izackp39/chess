@@ -49,7 +49,14 @@ public class Repl {
     }
 
     private void printPrompt() {
-        String label = (client.state() == State.SIGNEDIN) ? "[LOGGED_IN]" : "[LOGGED_OUT]";
-        System.out.print("\n" + RESET_TEXT_COLOR + label + " >>> " + SET_TEXT_COLOR_GREEN);
+        System.out.print("\n" + RESET_TEXT_COLOR + promptLabel() + " >>> " + SET_TEXT_COLOR_GREEN);
+    }
+
+    private String promptLabel() {
+        return switch (client.state()) {
+            case SIGNEDIN -> "[LOGGED_IN]";
+            case GAMEPLAY -> "[IN_GAME]";
+            default -> "[LOGGED_OUT]";
+        };
     }
 }
