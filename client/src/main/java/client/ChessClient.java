@@ -27,6 +27,8 @@ public class ChessClient implements ServerMessageObserver {
     private Integer currentGameID;
     private volatile ChessGame currentGame;
     private ChessGame.TeamColor perspective = ChessGame.TeamColor.WHITE;
+    private boolean observing;
+    private boolean confirmingResign;
     private Consumer<String> display = System.out::println;
 
     public ChessClient(ServerFacade server) {
@@ -112,9 +114,13 @@ public class ChessClient implements ServerMessageObserver {
     }
 
     private String evalGameplay(String command, String[] params) throws ResponseException {
+        if (confirmingResign) {
+            return finishResign(command);
+        }
         return switch (command) {
             case "redraw" -> redraw();
             case "move" -> makeMove(params);
+            case "resign" -> resign();
             case "leave" -> leave();
             case "help" -> helpGameplay();
             default -> unknownCommand();
@@ -186,6 +192,7 @@ public class ChessClient implements ServerMessageObserver {
         }
         server.joinGame(authToken, color, game.gameID());
         perspective = color;
+        observing = false;
         enterGame(game.gameID());
         return "Joined '" + game.gameName() + "' as " + color.name().toLowerCase() + ".";
     }
@@ -199,6 +206,7 @@ public class ChessClient implements ServerMessageObserver {
             return invalidGameNumber();
         }
         perspective = ChessGame.TeamColor.WHITE;
+        observing = true;
         enterGame(game.gameID());
         return "Observing '" + game.gameName() + "'.";
     }
@@ -221,6 +229,9 @@ public class ChessClient implements ServerMessageObserver {
      * so nothing is printed here.
      */
     private String makeMove(String[] params) throws ResponseException {
+        if (observing) {
+            return "Observers can't make moves.";
+        }
         if (params.length < 2 || params.length > 3) {
             return "Usage: move <FROM> <TO> [QUEEN|ROOK|BISHOP|KNIGHT]  e.g. move e2 e4";
         }
@@ -269,6 +280,26 @@ public class ChessClient implements ServerMessageObserver {
         ChessPiece piece = game.getBoard().getPiece(start);
         boolean lastRow = end.getRow() == 1 || end.getRow() == 8;
         return piece != null && piece.getPieceType() == ChessPiece.PieceType.PAWN && lastRow;
+    }
+
+    private String resign() {
+        if (observing) {
+            return "Observers can't resign. Type leave to stop watching.";
+        }
+        confirmingResign = true;
+        return "Are you sure you want to resign? You will lose the game. (yes/no)";
+    }
+
+    /**
+     * Handles the line typed after the resign prompt. Anything but yes cancels.
+     */
+    private String finishResign(String answer) throws ResponseException {
+        confirmingResign = false;
+        if (!answer.equals("yes") && !answer.equals("y")) {
+            return "Resign cancelled.";
+        }
+        server.resign(authToken, currentGameID);
+        return "";
     }
 
     private String leave() throws ResponseException {
@@ -345,6 +376,7 @@ public class ChessClient implements ServerMessageObserver {
         return """
                 redraw - the chess board
                 move <FROM> <TO> [QUEEN|ROOK|BISHOP|KNIGHT] - a piece, e.g. move e2 e4
+                resign - forfeit the game (you'll be asked to confirm)
                 leave - the game
                 help - with possible commands""";
     }

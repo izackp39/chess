@@ -52,6 +52,13 @@ public class ServerFacade {
         sendGameCommand(new MakeMoveCommand(authToken, gameID, move));
     }
 
+    /**
+     * Forfeits the game. The connection stays open so the user keeps seeing updates.
+     */
+    public void resign(String authToken, int gameID) throws ResponseException {
+        sendGameCommand(new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID));
+    }
+
     private void sendGameCommand(UserGameCommand command) throws ResponseException {
         if (webSocket == null) {
             throw new ResponseException(500, "Not connected to a game");
