@@ -22,7 +22,7 @@ public class GameService {
 
     public CreateGameResult createGame(String authToken, CreateGameRequest request)
             throws UnauthorizedException, BadRequestException, DataAccessException {
-        authenticate(authToken);
+        AuthCheck.require(authDAO, authToken);
         if (request == null || request.gameName() == null) {
             throw new BadRequestException("missing game name");
         }
@@ -32,13 +32,13 @@ public class GameService {
     }
 
     public ListGamesResult listGames(String authToken) throws UnauthorizedException, DataAccessException {
-        authenticate(authToken);
+        AuthCheck.require(authDAO, authToken);
         return new ListGamesResult(gameDAO.listGames());
     }
 
     public void joinGame(String authToken, JoinGameRequest request)
             throws UnauthorizedException, BadRequestException, AlreadyTakenException, DataAccessException {
-        AuthData auth = authenticate(authToken);
+        AuthData auth = AuthCheck.require(authDAO, authToken);
         if (request == null || request.playerColor() == null || request.gameID() == null) {
             throw new BadRequestException("missing or invalid player color or game ID");
         }
@@ -62,13 +62,5 @@ public class GameService {
             throw new AlreadyTakenException("black is already taken");
         }
         return new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game());
-    }
-
-    private AuthData authenticate(String authToken) throws UnauthorizedException, DataAccessException {
-        AuthData auth = (authToken == null) ? null : authDAO.getAuth(authToken);
-        if (auth == null) {
-            throw new UnauthorizedException("invalid auth token");
-        }
-        return auth;
     }
 }

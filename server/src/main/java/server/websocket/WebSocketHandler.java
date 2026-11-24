@@ -136,13 +136,17 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     /**
-     * Describes checkmate, stalemate, or check for the player whose turn it now is,
-     * or returns null if none applies
+     * Describes checkmate, stalemate, or check for the player whose turn it now is
+     * (by username, or by color if their seat is empty), or returns null if none applies
      */
     private static String statusMessage(GameData game) {
         ChessGame chess = game.game();
         ChessGame.TeamColor toMove = chess.getTeamTurn();
         String player = (toMove == ChessGame.TeamColor.WHITE) ? game.whiteUsername() : game.blackUsername();
+        if (player == null) {
+            // that player left, so the seat is empty; name the color instead
+            player = toMove.toString().toLowerCase();
+        }
         if (chess.isInCheckmate(toMove)) {
             return player + " is in checkmate";
         }

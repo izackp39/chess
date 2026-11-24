@@ -23,11 +23,7 @@ public class GameplayService {
     }
 
     public AuthData authenticate(String authToken) throws UnauthorizedException, DataAccessException {
-        AuthData auth = (authToken == null) ? null : authDAO.getAuth(authToken);
-        if (auth == null) {
-            throw new UnauthorizedException("invalid auth token");
-        }
-        return auth;
+        return AuthCheck.require(authDAO, authToken);
     }
 
     public GameData getGame(Integer gameID) throws BadRequestException, DataAccessException {

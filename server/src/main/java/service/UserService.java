@@ -53,9 +53,7 @@ public class UserService {
     }
 
     public void logout(String authToken) throws UnauthorizedException, DataAccessException {
-        if (authToken == null || authDAO.getAuth(authToken) == null) {
-            throw new UnauthorizedException("invalid auth token");
-        }
+        AuthCheck.require(authDAO, authToken);
         authDAO.deleteAuth(authToken);
     }
 
