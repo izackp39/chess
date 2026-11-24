@@ -1,6 +1,7 @@
 package client;
 
 import chess.ChessGame;
+import chess.ChessMove;
 import com.google.gson.Gson;
 import model.CreateGameRequest;
 import model.CreateGameResult;
@@ -10,6 +11,7 @@ import model.LoginRequest;
 import model.LoginResult;
 import model.RegisterRequest;
 import model.RegisterResult;
+import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
 
 import java.io.IOException;
@@ -44,6 +46,10 @@ public class ServerFacade {
     public void leave(String authToken, int gameID) throws ResponseException {
         sendGameCommand(new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID));
         disconnect();
+    }
+
+    public void makeMove(String authToken, int gameID, ChessMove move) throws ResponseException {
+        sendGameCommand(new MakeMoveCommand(authToken, gameID, move));
     }
 
     private void sendGameCommand(UserGameCommand command) throws ResponseException {
