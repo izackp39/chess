@@ -189,7 +189,7 @@ public class ChessClient implements ServerMessageObserver {
         if (game == null) {
             return invalidGameNumber();
         }
-        ChessGame.TeamColor color = parseColor(params[1]);
+        ChessGame.TeamColor color = InputParser.parseColor(params[1]);
         if (color == null) {
             return "Color must be WHITE or BLACK.";
         }
@@ -238,14 +238,14 @@ public class ChessClient implements ServerMessageObserver {
         if (params.length < 2 || params.length > 3) {
             return "Usage: move <FROM> <TO> [QUEEN|ROOK|BISHOP|KNIGHT]  e.g. move e2 e4";
         }
-        ChessPosition start = parsePosition(params[0]);
-        ChessPosition end = parsePosition(params[1]);
+        ChessPosition start = InputParser.parsePosition(params[0]);
+        ChessPosition end = InputParser.parsePosition(params[1]);
         if (start == null || end == null) {
-            return "Squares look like e2 or h8 (a letter a-h, then a number 1-8).";
+            return InputParser.SQUARE_FORMAT;
         }
         ChessPiece.PieceType promotion = null;
         if (params.length == 3) {
-            promotion = parsePromotion(params[2]);
+            promotion = InputParser.parsePromotion(params[2]);
             if (promotion == null) {
                 return "Promotion piece must be QUEEN, ROOK, BISHOP, or KNIGHT.";
             }
@@ -255,24 +255,6 @@ public class ChessClient implements ServerMessageObserver {
         }
         server.makeMove(authToken, currentGameID, new ChessMove(start, end, promotion));
         return "";
-    }
-
-    private ChessPosition parsePosition(String square) {
-        String s = square.toLowerCase();
-        if (!s.matches("[a-h][1-8]")) {
-            return null;
-        }
-        return new ChessPosition(s.charAt(1) - '0', s.charAt(0) - 'a' + 1);
-    }
-
-    private ChessPiece.PieceType parsePromotion(String piece) {
-        return switch (piece.toLowerCase()) {
-            case "queen", "q" -> ChessPiece.PieceType.QUEEN;
-            case "rook", "r" -> ChessPiece.PieceType.ROOK;
-            case "bishop", "b" -> ChessPiece.PieceType.BISHOP;
-            case "knight", "n" -> ChessPiece.PieceType.KNIGHT;
-            default -> null;
-        };
     }
 
     private boolean needsPromotion(ChessPosition start, ChessPosition end) {
@@ -292,9 +274,9 @@ public class ChessClient implements ServerMessageObserver {
         if (params.length != 1) {
             return "Usage: highlight <SQUARE>  e.g. highlight e2";
         }
-        ChessPosition square = parsePosition(params[0]);
+        ChessPosition square = InputParser.parsePosition(params[0]);
         if (square == null) {
-            return "Squares look like e2 or h8 (a letter a-h, then a number 1-8).";
+            return InputParser.SQUARE_FORMAT;
         }
         ChessGame game = currentGame;
         if (game == null) {
@@ -352,14 +334,6 @@ public class ChessClient implements ServerMessageObserver {
             return "No games listed yet. Type list first, then use a number from the list.";
         }
         return "Game number must be between 1 and " + listedGames.size() + ". Type list to see the games.";
-    }
-
-    private ChessGame.TeamColor parseColor(String color) {
-        return switch (color.toLowerCase()) {
-            case "white" -> ChessGame.TeamColor.WHITE;
-            case "black" -> ChessGame.TeamColor.BLACK;
-            default -> null;
-        };
     }
 
     private String logout() throws ResponseException {
